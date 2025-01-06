@@ -1,11 +1,6 @@
-import { onKeyDownPopupClose as popupClose } from './uploadImage.js';
 import { body } from './main.js';
 
-const downloadErrorTemplate = document.querySelector('#download-error').content;
-
-const successTemplate = document.querySelector('#success').content;
-const errorTemplate = document.querySelector('#error').content;
-
+// Классы всех сообщений и соответствующих им кнопок
 const MESSAGECLASSES = {
   success: {
     section: '.success',
@@ -16,96 +11,106 @@ const MESSAGECLASSES = {
     button: '.error__button'
   },
   downloadError: {
+    section: '.download-error-section',
     button: '.error__button'
   }
 };
 
-const downloadErrorMessage = {
-  downloadErrorShowen: false,
-  setDownloadErrorShowen: (value) => {
-    downloadErrorMessage.downloadErrorShowen = value;
-  },
-  showDownloadError: (cb, setter) => {
-    const message = downloadErrorTemplate.cloneNode(true);
-    const button = message.querySelector('.error__button');
-    if (!downloadErrorMessage.downloadErrorShowen) {
+// Основной класс сообщения
+class Message {
+  constructor(template, messageClasses) {
+    this.shown = false;
+    this.messageTemplate = template;
+    this.messageInfo = messageClasses;
+  }
+
+  setMessageShown = (value) => {
+    this.shown = value;
+  };
+
+  getMessageShowen = () => this.shown;
+
+  showMessage = (cb, setter) => {
+    this.setMessageShown(true);
+    const message = this.messageTemplate.cloneNode(true);
+    const button = message.querySelector(this.messageInfo.button);
+    if (this.getMessageShowen()) {
       body.appendChild(message);
     }
-
     const onDownload = () => {
       cb(setter);
+      this.closeMessage(this.messageInfo.section);
     };
 
     button.addEventListener('click', onDownload);
-    downloadErrorMessage.downloadErrorShowen = true;
-  },
-  closeMessage: () => {
-    downloadErrorMessage.setDownloadErrorShowen(false);
-    const message = document.querySelector('body > section.download-error-section');
+  };
+
+  closeMessage = (sectionClass) => {
+    this.setMessageShown(false);
+    const message = document.querySelector(`body > section${sectionClass}`);
     if (message) {
       message.remove();
     }
-  }
-};
+  };
 
-const uploadFormMessages = {
-  messageShowen: false,
-  message: '',
-  setMessageShowen: (value, message) => {
-    uploadFormMessages.messageShowen = value;
-    uploadFormMessages.message = message;
-  },
-  showUploadSuccessMessage: () => {
-    uploadFormMessages.setMessageShowen(true, MESSAGECLASSES.success.section);
-    const message = successTemplate.cloneNode(true);
-    const section = message.querySelector(MESSAGECLASSES.success.section);
-    const button = message.querySelector(MESSAGECLASSES.success.button);
-    body.appendChild(message);
-
-    const onClickMessageClose = (evt) => {
-      if (evt.target === section) {
-        uploadFormMessages.closeMessage(MESSAGECLASSES.success.section);
-        document.removeEventListener('keydown', popupClose);
+  deleteEventListeners = (listeners) => {
+    if (Array.isArray(listeners)) {
+      if (Array.isArray(listeners[0])) {
+        listeners.forEach(([event, func]) => document.removeEventListener(event, func));
+      } else {
+        const [event, func] = listeners;
+        document.removeEventListener(event, func);
       }
-    };
+    }
+  };
+}
 
-    const onCloseMessage = () => {
-      uploadFormMessages.closeMessage(MESSAGECLASSES.success.section);
-      document.removeEventListener('keydown', popupClose);
-    };
+// Класс для сообщений с особенностями закрытия
+class UploadMessage extends Message {
+  constructor(templateSuccess, templateError, messageClassesSuccess, messageClassesError) {
+    super(templateSuccess, messageClassesSuccess);
+    this.messageTemplateError = templateError;
+    this.messageInfoError = messageClassesError;
+    this.active = '';
+  }
 
-    button.addEventListener('click', onCloseMessage);
-    section.addEventListener('click', onClickMessageClose);
-  },
-  showUploadErrorMessage: () => {
-    uploadFormMessages.setMessageShowen(true, MESSAGECLASSES.error.section);
-    const message = errorTemplate.cloneNode(true);
-    const section = message.querySelector(MESSAGECLASSES.error.section);
-    const button = message.querySelector(MESSAGECLASSES.error.button);
-    if (uploadFormMessages.messageShowen) {
+  showMessage = (messageCloseCb, success = true) => {
+    this.setMessageShown(true);
+    this.active = (success) ? this.messageInfo : this.messageInfoError;
+    let message = '';
+    let section = '';
+    let button = '';
+    if (success) {
+      message = this.messageTemplate.cloneNode(true);
+      section = message.querySelector(this.messageInfo.section);
+      button = message.querySelector(this.messageInfo.button);
+    } else {
+      message = this.messageTemplateError.cloneNode(true);
+      section = message.querySelector(this.messageInfoError.section);
+      button = message.querySelector(this.messageInfoError.button);
+    }
+
+    if (this.getMessageShowen()) {
       body.appendChild(message);
     }
 
-    const onClickMessageClose = (evt) => {
-      if (evt.target === section) {
-        uploadFormMessages.closeMessage(MESSAGECLASSES.error.section);
+    const onCloseMessage = () => {
+      const sectionClass = (success) ? this.messageInfo.section : this.messageInfoError.section;
+      this.closeMessage(sectionClass);
+      if (this.active.section === MESSAGECLASSES.success.section) {
+        this.deleteEventListeners(['keydown', messageCloseCb]);
       }
     };
 
-    const onCloseMessage = () => {
-      uploadFormMessages.closeMessage(MESSAGECLASSES.error.section);
+    const onClickMessageClose = (evt) => {
+      if (evt.target === section) {
+        onCloseMessage();
+      }
     };
 
     button.addEventListener('click', onCloseMessage);
     section.addEventListener('click', onClickMessageClose);
-  },
-  closeMessage: (messageClass) => {
-    const message = document.querySelector(`body > section${messageClass}`);
-    uploadFormMessages.setMessageShowen(false, '');
-    if (message) {
-      message.remove();
-    }
-  }
-};
+  };
+}
 
-export {downloadErrorMessage, uploadFormMessages, MESSAGECLASSES};
+export {Message, UploadMessage, MESSAGECLASSES};
