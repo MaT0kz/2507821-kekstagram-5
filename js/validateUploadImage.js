@@ -1,23 +1,8 @@
 import {sendImage} from './requests.js';
 import { form as uploadForm, submitter, clearImageUploadForm, onKeyDownPopupClose } from './uploadImage.js';
-import { uploadFormMessages } from './messages.js';
 import { body } from './main.js';
 
-const overlay = document.querySelector('.img-upload__overlay');
-const hashTags = overlay.querySelector('.text__hashtags');
-const form = document.querySelector('.img-upload__form');
-
-const data = {
-  form: uploadForm,
-  submitter: submitter,
-  clearWindow: clearImageUploadForm,
-  body: body,
-  popupClose: onKeyDownPopupClose,
-  success: uploadFormMessages.showUploadSuccessMessage,
-  error: uploadFormMessages.showUploadErrorMessage
-};
-// Валидация
-// Объект настроек для валидации хэш-тегов
+// Объекты настроек для валидации хэш-тегов
 const VALIDATE_HASH_TAGS = {
   regExp: /^#[a-zа-яё0-9]{1,19}$/i,
   validHashTag: {
@@ -63,6 +48,19 @@ const SETTINGS = {
   errorTextParent: 'img-upload__field-wrapper',
 };
 
+const overlay = document.querySelector('.img-upload__overlay');
+const hashTags = overlay.querySelector('.text__hashtags');
+const form = document.querySelector('.img-upload__form');
+
+const data = {
+  form: uploadForm,
+  submitter: submitter,
+  clearWindow: clearImageUploadForm,
+  body: body,
+  popupClose: onKeyDownPopupClose
+};
+
+// Валидация
 const pristine = new Pristine(form, SETTINGS);
 pristine.addValidator(hashTags, VALIDATE_HASH_TAGS.validHashTag.func, VALIDATE_HASH_TAGS.validHashTag.message, 3, true);
 pristine.addValidator(hashTags, VALIDATE_HASH_TAGS.repeatingHashTags.func, VALIDATE_HASH_TAGS.repeatingHashTags.message, 2, true);

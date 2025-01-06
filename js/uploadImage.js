@@ -1,4 +1,4 @@
-import { uploadFormMessages, MESSAGECLASSES } from './messages.js';
+import { UploadMessage, MESSAGECLASSES } from './messages.js';
 import { body } from './main.js';
 
 const picturePreview = document.querySelector('.img-upload__preview img');
@@ -18,6 +18,13 @@ const sliderElement = document.querySelector('.effect-level__slider');
 const sliderValue = document.querySelector('.effect-level__value');
 const sliderEffects = document.querySelector('.effects__list');
 const sliderContainer = document.querySelector('.img-upload__effect-level');
+
+// Сообщения
+const successTemplate = document.querySelector('#success').content;
+const errorTemplate = document.querySelector('#error').content;
+
+
+const uploadMessage = new UploadMessage(successTemplate, errorTemplate, MESSAGECLASSES.success, MESSAGECLASSES.error);
 
 // Слайдер
 let currentEffect = 'none';
@@ -156,13 +163,13 @@ const closeOverlay = () => {
 
 const onKeyDownPopupClose = (evt) => {
   if (evt.key === 'Escape') {
-    if (!uploadFormMessages.messageShowen) {
+    if (!uploadMessage.getMessageShowen()) {
       closeOverlay();
-      document.removeEventListener('keydown', onKeyDownPopupClose);
+      uploadMessage.deleteEventListeners(['keydown', onKeyDownPopupClose]);
     } else {
-      uploadFormMessages.closeMessage(uploadFormMessages.message);
-      if (MESSAGECLASSES.success.section) {
-        document.removeEventListener('keydown', onKeyDownPopupClose);
+      uploadMessage.closeMessage(uploadMessage.active.section);
+      if (uploadMessage.active === MESSAGECLASSES.success) {
+        uploadMessage.deleteEventListeners(['keydown', onKeyDownPopupClose]);
       }
     }
   }
@@ -220,4 +227,4 @@ const clearImageUploadForm = (closePopup = false) => {
   }
 };
 
-export {form, submitter, clearImageUploadForm, onKeyDownPopupClose};
+export {form, submitter, clearImageUploadForm, onKeyDownPopupClose, uploadMessage};
